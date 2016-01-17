@@ -53,9 +53,9 @@ IS_WINDOWS = (system == 'Windows')
 ENV_VAR_SUBFOLDERS = {
     'CMAKE_PREFIX_PATH': '',
     'CPATH': 'include',
-    'LD_LIBRARY_PATH' if not IS_DARWIN else 'DYLD_LIBRARY_PATH': ['lib', os.path.join('lib', 'arm-linux-gnueabihf')],
+    'LD_LIBRARY_PATH' if not IS_DARWIN else 'DYLD_LIBRARY_PATH': ['lib', os.path.join('lib', 'i386-linux-gnu')],
     'PATH': 'bin',
-    'PKG_CONFIG_PATH': [os.path.join('lib', 'pkgconfig'), os.path.join('lib', 'arm-linux-gnueabihf', 'pkgconfig')],
+    'PKG_CONFIG_PATH': [os.path.join('lib', 'pkgconfig'), os.path.join('lib', 'i386-linux-gnu', 'pkgconfig')],
     'PYTHONPATH': 'lib/python2.7/dist-packages',
 }
 

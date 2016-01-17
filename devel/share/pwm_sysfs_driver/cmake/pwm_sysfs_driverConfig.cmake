@@ -67,14 +67,14 @@ set(pwm_sysfs_driver_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("TRUE" STREQUAL "TRUE")
-  set(pwm_sysfs_driver_SOURCE_PREFIX /home/racecar/racecar-ws/src/racecar-iap/pwm_sysfs_driver)
-  set(pwm_sysfs_driver_DEVEL_PREFIX /home/racecar/racecar-ws/devel)
+  set(pwm_sysfs_driver_SOURCE_PREFIX /home/racecar/racecar/src/racecar-iap/pwm_sysfs_driver)
+  set(pwm_sysfs_driver_DEVEL_PREFIX /home/racecar/racecar/devel)
   set(pwm_sysfs_driver_INSTALL_PREFIX "")
   set(pwm_sysfs_driver_PREFIX ${pwm_sysfs_driver_DEVEL_PREFIX})
 else()
   set(pwm_sysfs_driver_SOURCE_PREFIX "")
   set(pwm_sysfs_driver_DEVEL_PREFIX "")
-  set(pwm_sysfs_driver_INSTALL_PREFIX /home/racecar/racecar-ws/install)
+  set(pwm_sysfs_driver_INSTALL_PREFIX /home/racecar/racecar/install)
   set(pwm_sysfs_driver_PREFIX ${pwm_sysfs_driver_INSTALL_PREFIX})
 endif()
 
@@ -91,9 +91,9 @@ endif()
 # flag project as catkin-based to distinguish if a find_package()-ed project is a catkin project
 set(pwm_sysfs_driver_FOUND_CATKIN_PROJECT TRUE)
 
-if(NOT "/home/racecar/racecar-ws/src/racecar-iap/pwm_sysfs_driver/include " STREQUAL " ")
+if(NOT "/home/racecar/racecar/src/racecar-iap/pwm_sysfs_driver/include " STREQUAL " ")
   set(pwm_sysfs_driver_INCLUDE_DIRS "")
-  set(_include_dirs "/home/racecar/racecar-ws/src/racecar-iap/pwm_sysfs_driver/include")
+  set(_include_dirs "/home/racecar/racecar/src/racecar-iap/pwm_sysfs_driver/include")
   foreach(idir ${_include_dirs})
     if(IS_ABSOLUTE ${idir} AND IS_DIRECTORY ${idir})
       set(include ${idir})
@@ -103,7 +103,7 @@ if(NOT "/home/racecar/racecar-ws/src/racecar-iap/pwm_sysfs_driver/include " STRE
         message(FATAL_ERROR "Project 'pwm_sysfs_driver' specifies '${idir}' as an include dir, which is not found.  It does not exist in '${include}'.  Ask the maintainer 'Michael Boulet <boulet@ll.mit.edu>' to fix it.")
       endif()
     else()
-      message(FATAL_ERROR "Project 'pwm_sysfs_driver' specifies '${idir}' as an include dir, which is not found.  It does neither exist as an absolute directory nor in '/home/racecar/racecar-ws/src/racecar-iap/pwm_sysfs_driver/${idir}'.  Ask the maintainer 'Michael Boulet <boulet@ll.mit.edu>' to fix it.")
+      message(FATAL_ERROR "Project 'pwm_sysfs_driver' specifies '${idir}' as an include dir, which is not found.  It does neither exist as an absolute directory nor in '/home/racecar/racecar/src/racecar-iap/pwm_sysfs_driver/${idir}'.  Ask the maintainer 'Michael Boulet <boulet@ll.mit.edu>' to fix it.")
     endif()
     _list_append_unique(pwm_sysfs_driver_INCLUDE_DIRS ${include})
   endforeach()
@@ -122,7 +122,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/racecar/racecar-ws/devel/lib;/opt/ros/indigo/lib)
+    foreach(path /home/racecar/racecar/devel/lib;/opt/ros/indigo/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
