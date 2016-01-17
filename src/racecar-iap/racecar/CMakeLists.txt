@@ -133,6 +133,7 @@ catkin_package(
 ## in contrast to setup.py, you can choose the destination
  install(PROGRAMS
    scripts/wall_detector.py
+   scripts/jetson-ackermann_controller.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

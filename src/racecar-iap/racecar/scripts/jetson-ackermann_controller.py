@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 import rospy
+import numpy as np
 import math
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Float64, Float64MultiArray, MultiArrayDimension
 from sensor_msgs.msg import LaserScan # for the laser data
+from racecar.msg import wd
+
+import matplotlib.pyplot as plt
 
 # define the method for generating a one dimensional MultiArray
 def makeMultiArray(iterable, label):
@@ -27,113 +31,141 @@ class _AckermannCtrlr(object):
     vehicle with Ackermann steering.
     """
 
-    # initializing node
-    rospy.init_node("jetson_ackermann_controller")
+    def __init__(self):
+        plt.ion()
 
-    self._sleep_timer = rospy.Rate(pub_freq)
+        # initializing node
+        rospy.init_node("acker_ctrl") # jetson_ackermann_controller
 
-    self._steer_ang = 0.0       # Steering angle
-    self._last_steer_ang = 0.0  # Last steering angle
-    self._steer_ang_vel = 0.0   # Steering angle velocity
+        self._sleep_timer = rospy.Rate(10)
 
-    # Acceleration
-    self._speed = 0.0
-    self._accel = 0.0
-    self._jerk = 0.0
+        self._steer_ang = 0.0       # Steering angle
+        self._last_steer_ang = 0.0  # Last steering angle
+        self._steer_ang_vel = 0.0   # Steering angle velocity
 
-	# Walls definition
-    self._right_wall_a = 0
-	self._right_wall_b = 0
-	self._left_wall_a = 0
-	self._left_wall_b = 0
-	self._middle_line_a = 0
-	self._middle_line_b = 0
+        # Acceleration
+        self._speed = 0.0
+        self._accel = 0.0
+        self._jerk = 0.0
 
-	# Object with the message to be published
-    self._ackermann_cmd = AckermannDriveStamped()
-    # header
-    self._ackermann_cmd.header.seq = 0
-    self._ackermann_cmd.header.stamp.secs = 0
-    self._ackermann_cmd.header.stamp.nsecs = 0
-    self._ackermann_cmd.header.frame_id = ''
-    # driver
-    self._ackermann_cmd.drive.speed = 0
-    self._ackermann_cmd.drive.acceleration = 0
-    self._ackermann_cmd.drive.jerk = 0
-    self._ackermann_cmd.drive.steering_angle = 0
-    self._ackermann_cmd.drive.steering_angle_velocity = 0
+        # Walls definition
+        self._right_wall_a = 0
+        self._right_wall_b = 0
+        self._left_wall_a = 0
+        self._left_wall_b = 0
+        self._middle_line_a = 0
+        self._middle_line_b = 0
 
-    # Publishers
-    self._ackermann_cmd_pub = rospy.Publisher("ackermann_cmd", AckermannDriveStamped, queue_size=10)
+        # Object with the message to be published
+        self._ackermann_cmd = AckermannDriveStamped()
+        # header
+        self._ackermann_cmd.header.seq = 0
+        self._ackermann_cmd.header.stamp.secs = 0
+        self._ackermann_cmd.header.stamp.nsecs = 0
+        self._ackermann_cmd.header.frame_id = ''
+        # driver
+        self._ackermann_cmd.drive.speed = 0
+        self._ackermann_cmd.drive.acceleration = 0
+        self._ackermann_cmd.drive.jerk = 0
+        self._ackermann_cmd.drive.steering_angle = 0
+        self._ackermann_cmd.drive.steering_angle_velocity = 0
 
-    # Subscribers
-    # laser data
-    rospy.Subscriber("scan", LaserScan, self.laser_callback, queue_size=10)
-    # wall data
-    rospy.Subscriber("walls", Walls, self.laser_callback, queue_size=10)
+        # Publishers
+        self._ackermann_cmd_pub = rospy.Publisher("/vesc/ackermann_cmd", AckermannDriveStamped, queue_size=10)
+
+        # Subscribers
+        # laser data
+        rospy.Subscriber("/scan", LaserScan, self.laser_callback, queue_size=10)
+        # wall data
+        rospy.Subscriber("/wd", wd, self.wall_callback, queue_size=10)
 
     def laser_callback(self, laser_data):
-    	# update laser data
-    	return
-	    
+        # update laser data
+        return
+        
 
     def wall_callback(self, walls_data):
-    	# update wall data
-    	#left wall
-	    self._left_wall_a = walls_data.a_l
-	    self._left_wall_b = walls_data.b_l
-	    #right wall
-	    self._right_wall_a = walls_data.a_r
-	    self._right_wall_b = walls_data.b_r
+        # update wall data
+        #left wall
+        self._left_wall_a = walls_data.a_l
+        self._left_wall_b = walls_data.b_l
+        #right wall
+        self._right_wall_a = walls_data.a_r
+        self._right_wall_b = walls_data.b_r
 
-	    # finding the coefficientes of the middle line
-	    # y = h x + k
-	    alpha = math.atan(self._left_wall_a)
-	    beta = math.atan(self._right_wall_a)
-	    h = math.tan((alpha + beta)/2.0)
-	    k = (_right_wall_b - _left_wall_b)*(_left_wall_a - h)/(_left_wall_a - _right_wall_b) + _left_wall_b)
-		self._middle_line_a = h
-		self._middle_line_b = k
+        # finding the coefficientes of the middle line
+        # y = h x + k
+        alpha = math.atan(self._left_wall_a)
+        beta = math.atan(self._right_wall_a)
+        h = math.tan((alpha + beta)/2.0)
+        k = (self._right_wall_b - self._left_wall_b)*(self._left_wall_a - h)/(self._left_wall_a - self._right_wall_a) + self._left_wall_b
+        
+        self._middle_line_a = h
+        self._middle_line_b = k
 
-	    return
-	    
+        # zr = []
+        # zr.append(walls_data.a_r)
+        # zr.append(walls_data.b_r)
+        # zl = []
+        # zl.append(walls_data.a_l)
+        # zl.append(walls_data.b_l)
+        # zm = []
+        # zm.append(self._middle_line_a)
+        # zm.append(self._middle_line_b)
 
+        # pr = np.poly1d(zr)
+        # xpr = np.linspace(-15, 15, 100)
+        # pl = np.poly1d(zl)
+        # xpl = np.linspace(-15, 15, 100)
+        # pm = np.poly1d(zm)
+        # xpm = np.linspace(-15, 15, 100)
+
+        # plt.clf()
+        # plt.plot(xpr, pr(xpr), 'r-', xpl, pl(xpl), 'g-', xpm, pm(xpm), 'b-')
+        # plt.axis([-15,15,-15,15])
+        # plt.draw()
+        
+        pass
+        
     def spin(self):
-    """Control the vehicle."""
-    last_time = rospy.get_time()
+        """Control the vehicle."""
+        last_time = rospy.get_time()
+        sign = 1
 
-    while not rospy.is_shutdown():
-        t = rospy.get_time()
-        delta_t = t - last_time
-        last_time = t
+        while not rospy.is_shutdown():
+            t = rospy.get_time()
+            delta_t = t - last_time
+            last_time = t
 
-        # header
-        self._ackermann_cmd.header.seq = _ackermann_cmd.header.seq + 1
+            # header
+            self._ackermann_cmd.header.seq = self._ackermann_cmd.header.seq + 1
+            if (self._ackermann_cmd.header.seq % 10 == 0):
+                sign = -sign
 
-        # Velocity Controller
-        self._ackermann_cmd.drive.speed = self._ctrl_speed() # range = -2:2
-        self._ackermann_cmd.drive.acceleration = 0 # range = 0:0, always 0 from the joystick
-        self._ackermann_cmd.drive.jerk = 0 # range = 0:0, always 0 from the joystick
+            # Velocity Controller
+            self._ackermann_cmd.drive.speed = 0#self._ctrl_speed() # range = -2:2
+            self._ackermann_cmd.drive.acceleration = 0 # range = 0:0, always 0 from the joystick
+            self._ackermann_cmd.drive.jerk = 0 # range = 0:0, always 0 from the joystick
 
-        # Steering Controller
-        self._ackermann_cmd.drive.steering_angle = self._ctrl_steering() # range = -0.34:0.34
-        self._ackermann_cmd.drive.steering_angle_velocity = 0 # range = 0:0	, always 0 from the joystick
+            # Steering Controller
+            self._ackermann_cmd.drive.steering_angle = sign*0.34#self._ctrl_steering() # range = -0.34:0.34
+            self._ackermann_cmd.drive.steering_angle_velocity = 0 # range = 0:0 , always 0 from the joystick
 
-        # Publish the velocity
-        self._ackermann_cmd_pub.publish(self._ackermann_cmd)
+            # Publish the velocity
+            self._ackermann_cmd_pub.publish(self._ackermann_cmd)
 
-        # wait
-        self._sleep_timer.sleep()
+            # wait
+            self._sleep_timer.sleep()
 
     def _ctrl_speed(self):
-    	_ctrl_speed_input = 0
+        _ctrl_speed_input = 0
 
-    	return _ctrl_speed_input
+        return _ctrl_speed_input
 
     def _ctrl_steering(self):
-    	_ctrl_steering_input = 0
+        _ctrl_steering_input = 0
 
-    	return _ctrl_steering_input
+        return _ctrl_steering_input
 
 
  # main
