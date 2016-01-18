@@ -4,7 +4,7 @@ import numpy as np
 import math
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Float64, Float64MultiArray, MultiArrayDimension, Bool
-from sensor_msgs.msg import LaserScan # for the laser data
+from sensor_msgs.msg import LaserScan, Joy # for the laser data
 from racecar.msg import wd
 
 import matplotlib.pyplot as plt
@@ -76,18 +76,21 @@ class _AckermannCtrlr(object):
 
         # Subscribers
         # laser data
-        rospy.Subscriber("/scan", LaserScan, self.laser_callback, queue_size=10)
+        # rospy.Subscriber("/scan", LaserScan, self.laser_callback, queue_size=10)
         # wall data
-        rospy.Subscriber("/vesc/wd", wd, self.wall_callback, queue_size=10)
+        rospy.Subscriber("/vesc/wd", wd, self.wall_callback, queue_size=20)
         # danger data
-        rospy.Subscriber("/danger", Bool, self.danger_callback, queue_size=10)
+        rospy.Subscriber("/vesc/danger", Bool, self.danger_callback, queue_size=20)
+        # joy data
+        rospy.Subscriber("/vesc/joy", Joy, self.joy_callback, queue_size=20)
 
         self.sign = 1
         self.danger = False
+        self.joy_command = [0]*12
 
-    def laser_callback(self, laser_data):
-        # update laser data
-        return
+    # def laser_callback(self, laser_data):
+    #     # update laser data
+    #     return
         
 
     def wall_callback(self, walls_data):
@@ -136,8 +139,13 @@ class _AckermannCtrlr(object):
 
     def danger_callback(self, danger_data):
         # update danger data
-        self.danger = danger_data
-        return
+        self.danger = danger_data.data
+        pass
+
+    def joy_callback(self, joy_data):
+        # update danger data
+        self.joy_command = joy_data.buttons
+        pass
         
     def spin(self):
         """Control the vehicle."""
@@ -168,7 +176,10 @@ class _AckermannCtrlr(object):
             self._sleep_timer.sleep()
 
     def _ctrl_speed(self):
-        _ctrl_speed_input = 0.15
+        if self.danger or self.joy_command[4] == 1:
+            _ctrl_speed_input = 0
+        else:
+            _ctrl_speed_input = 1
 
         return _ctrl_speed_input
 
@@ -184,11 +195,15 @@ class _AckermannCtrlr(object):
         #-----------------------------------------------------------------------
         # we want to minimize the distance between the robot and the middle line
         # so the error is the linear coefficient of the middle line (_middle_line_b)
-        kP = 0.34 # proportional constant
+        kP = 0.05 # proportional constant 0.34
         kD = 0.1 # derivative constant
 
         # Proportional Control
-        _ctrl_steering_input = kP*self._middle_line_b
+        if self.danger or self.joy_command[4] == 1:
+            _ctrl_steering_input = 0
+        else:
+            _ctrl_steering_input = kP*self._middle_line_b
+        
 
         # Proportional + Derivative
         # _ctrl_steering_input = kD*(self._prev_middle_line_b - self._middle_line_b)

@@ -37,17 +37,19 @@ class DangerDetector:
 		- Angle -90: 180, Angle 90: 600, Angle 0: 540
 		'''
 
-		range_min = 0.2 # MARK: verify what is ther actual range of values
-		obs_free_limit = 36
+		range_min = 1 # MARK: verify what is ther actual range of values
+		obs_free_limit = 50
 
-		# Front points
-		#init = 480
-		#end = 600
+		# Front points # 480, 600 for 30 degrees # 420, 660 for 60 degrees
+		init = 420
+		end = 660
 		# defining a specific range of angles to be considered
-		front_obs_ranges = msg.ranges[480:600]
+		front_obs_ranges = msg.ranges[init:end]
 		weights = [0 if dist > range_min else 1 for dist in front_obs_ranges]
 		danger_ahead = sum(weights) > obs_free_limit
 
+		self._danger_pub.publish(danger_ahead)
+		'''
 		# Right wall points
 		right_wall = msg.ranges[180:480]
 		angle = msg.angle_min + msg.angle_increment*180
@@ -97,6 +99,7 @@ class DangerDetector:
 		plt.axis([-15,15,-15,15])
 		plt.draw()
 		plt.show()
+		'''
 
 		# n_inputs = 1
 		# n_outputs = 1
