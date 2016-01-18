@@ -55,6 +55,7 @@ class _AckermannCtrlr(object):
         self._left_wall_b = 0
         self._middle_line_a = 0
         self._middle_line_b = 0
+        self._prev_middle_line_b = 0
 
         # Object with the message to be published
         self._ackermann_cmd = AckermannDriveStamped()
@@ -79,6 +80,8 @@ class _AckermannCtrlr(object):
         # wall data
         rospy.Subscriber("/wd", wd, self.wall_callback, queue_size=10)
 
+        self.sign = 1
+
     def laser_callback(self, laser_data):
         # update laser data
         return
@@ -101,6 +104,7 @@ class _AckermannCtrlr(object):
         k = (self._right_wall_b - self._left_wall_b)*(self._left_wall_a - h)/(self._left_wall_a - self._right_wall_a) + self._left_wall_b
         
         self._middle_line_a = h
+        self._prev_middle_line_b = self._middle_line_b
         self._middle_line_b = k
 
         # zr = []
@@ -130,7 +134,6 @@ class _AckermannCtrlr(object):
     def spin(self):
         """Control the vehicle."""
         last_time = rospy.get_time()
-        sign = 1
 
         while not rospy.is_shutdown():
             t = rospy.get_time()
@@ -139,16 +142,15 @@ class _AckermannCtrlr(object):
 
             # header
             self._ackermann_cmd.header.seq = self._ackermann_cmd.header.seq + 1
-            if (self._ackermann_cmd.header.seq % 10 == 0):
-                sign = -sign
+            
 
             # Velocity Controller
-            self._ackermann_cmd.drive.speed = 0#self._ctrl_speed() # range = -2:2
+            self._ackermann_cmd.drive.speed = self._ctrl_speed() # range = -2:2
             self._ackermann_cmd.drive.acceleration = 0 # range = 0:0, always 0 from the joystick
             self._ackermann_cmd.drive.jerk = 0 # range = 0:0, always 0 from the joystick
 
             # Steering Controller
-            self._ackermann_cmd.drive.steering_angle = sign*0.34#self._ctrl_steering() # range = -0.34:0.34
+            self._ackermann_cmd.drive.steering_angle = self._ctrl_steering() # range = -0.34:0.34
             self._ackermann_cmd.drive.steering_angle_velocity = 0 # range = 0:0 , always 0 from the joystick
 
             # Publish the velocity
@@ -158,12 +160,31 @@ class _AckermannCtrlr(object):
             self._sleep_timer.sleep()
 
     def _ctrl_speed(self):
-        _ctrl_speed_input = 0
+        _ctrl_speed_input = 0.5
 
         return _ctrl_speed_input
 
     def _ctrl_steering(self):
-        _ctrl_steering_input = 0
+        # Just witching the steering every second for testing purposes
+        #-----------------------------------------------------------------------
+        # if (self._ackermann_cmd.header.seq % 10 == 0):
+        #         self.sign = -self.sign
+        # _ctrl_steering_input = 0.34*self.sign
+        
+
+        # Distance to the wall approach
+        #-----------------------------------------------------------------------
+        # we want to minimize the distance between the robot and the middle line
+        # so the error is the linear coefficient of the middle line (_middle_line_b)
+        kP = 0.34 # proportional constant
+        kD = 0.1 # derivative constant
+
+        # Proportional Control
+        _ctrl_steering_input = kP*self._middle_line_b
+
+        # Proportional + Derivative
+        # _ctrl_steering_input = kD*(self._prev_middle_line_b - self._middle_line_b)
+
 
         return _ctrl_steering_input
 
