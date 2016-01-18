@@ -160,7 +160,7 @@ class _AckermannCtrlr(object):
             self._sleep_timer.sleep()
 
     def _ctrl_speed(self):
-        _ctrl_speed_input = 0.5
+        _ctrl_speed_input = 0.15
 
         return _ctrl_speed_input
 
