@@ -3,7 +3,7 @@ import rospy
 import numpy as np
 import math
 from ackermann_msgs.msg import AckermannDriveStamped
-from std_msgs.msg import Float64, Float64MultiArray, MultiArrayDimension
+from std_msgs.msg import Float64, Float64MultiArray, MultiArrayDimension, Bool
 from sensor_msgs.msg import LaserScan # for the laser data
 from racecar.msg import wd
 
@@ -78,9 +78,12 @@ class _AckermannCtrlr(object):
         # laser data
         rospy.Subscriber("/scan", LaserScan, self.laser_callback, queue_size=10)
         # wall data
-        rospy.Subscriber("/wd", wd, self.wall_callback, queue_size=10)
+        rospy.Subscriber("/vesc/wd", wd, self.wall_callback, queue_size=10)
+        # danger data
+        rospy.Subscriber("/danger", Bool, self.danger_callback, queue_size=10)
 
         self.sign = 1
+        self.danger = False
 
     def laser_callback(self, laser_data):
         # update laser data
@@ -130,6 +133,11 @@ class _AckermannCtrlr(object):
         # plt.draw()
         
         pass
+
+    def danger_callback(self, danger_data):
+        # update danger data
+        self.danger = danger_data
+        return
         
     def spin(self):
         """Control the vehicle."""
@@ -160,7 +168,7 @@ class _AckermannCtrlr(object):
             self._sleep_timer.sleep()
 
     def _ctrl_speed(self):
-        _ctrl_speed_input = 0.5
+        _ctrl_speed_input = 0.15
 
         return _ctrl_speed_input
 
