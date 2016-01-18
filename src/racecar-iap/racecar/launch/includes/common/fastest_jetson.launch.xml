@@ -17,7 +17,7 @@
 
   <node pkg="joy_teleop" type="joy_teleop.py" name="joy_teleop" />
   <node pkg="racecar" type="wall_detector.py" name="WD_node" />
-  <node pkg="racecar" type="jetson-ackermann_controller.py" name="acker_ctrl" output="screen"/>
+  <node pkg="racecar" type="jetson-ackermann_controller.py" name="acker_ctrl" output="screen"/> 
   
   
 </launch>
