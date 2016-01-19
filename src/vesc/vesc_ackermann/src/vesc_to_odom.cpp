@@ -6,6 +6,8 @@
 
 #include "nav_msgs/Odometry.h"
 
+#include "std_msgs/Float64.h"
+
 namespace vesc_ackermann
 {
 
@@ -35,6 +37,9 @@ VescToOdom::VescToOdom(ros::NodeHandle nh, ros::NodeHandle private_nh) :
 
   // create odom publisher
   odom_pub_ = nh.advertise<nav_msgs::Odometry>("odom", 10);
+  // create odom publisher
+  dist_pub_ = nh.advertise<std_msgs::Float64>("dist", 10);
+  dist_ = 0.0;
 
   // subscribe to vesc state and. optionally, servo command
   vesc_state_sub_ = nh.subscribe("sensors/core", 10, &VescToOdom::vescStateCallback, this);
@@ -70,13 +75,21 @@ void VescToOdom::vescStateCallback(const vesc_msgs::VescStateStamped::ConstPtr& 
   // propigate odometry
   double x_dot = current_speed * cos(yaw_);
   double y_dot = current_speed * sin(yaw_);
-  x_ += x_dot * dt.toSec();
-  y_ += y_dot * dt.toSec();
+	
+  double dx = x_dot * dt.toSec();
+  double dy = y_dot * dt.toSec();
+  x_ += dx;
+  y_ += dy;
+  dist_ += sqrt(dx*dx+dy*dy);
   if (use_servo_cmd_)
     yaw_ += current_angular_velocity * dt.toSec();
 
   // save state for next time
   last_state_ = state;
+
+  // Create odometry message
+  std_msgs::Float64 distance;
+  distance.data = dist_;
 
   // publish odometry message
   nav_msgs::Odometry::Ptr odom(new nav_msgs::Odometry);
@@ -108,6 +121,7 @@ void VescToOdom::vescStateCallback(const vesc_msgs::VescStateStamped::ConstPtr& 
 
   if (ros::ok()) {
     odom_pub_.publish(odom);
+    dist_pub_.publish(distance);
   }
 }
 

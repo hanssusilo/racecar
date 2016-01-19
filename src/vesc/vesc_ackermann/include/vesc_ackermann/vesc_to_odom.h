@@ -28,12 +28,13 @@ private:
   double wheelbase_;
 
   // odometry state
-  double x_, y_, yaw_;
+  double x_, y_, yaw_,dist_;
   std_msgs::Float64::ConstPtr last_servo_cmd_; ///< Last servo position commanded value
   vesc_msgs::VescStateStamped::ConstPtr last_state_; ///< Last received state message
 
   // ROS services
   ros::Publisher odom_pub_;
+  ros::Publisher dist_pub_;
   ros::Subscriber vesc_state_sub_;
   ros::Subscriber servo_sub_;
 
