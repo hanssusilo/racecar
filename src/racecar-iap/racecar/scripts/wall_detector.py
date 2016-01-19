@@ -16,13 +16,23 @@ class WallDetector:
 		# subscribe to the laser scan topic
 		print("Wall detector started")
 		self.wd_subs = rospy.Subscriber("/scan", LaserScan, self.wall_detector_callback)
-		self.wd_pub = rospy.Publisher("wd", wd)
+		self.wd_pub = rospy.Publisher("wd", wd, queue_size=10)
+		self.corner_thresh = 4
 		plt.ion()
+
+		self.window=10.0
+		self.confidence_num=5
+		self.watch_window_min=-np.pi/6
+		self.watch_window_max=-np.pi*2/3.0
+
+	def distance_to_the_wall(self, angle, wall_data):
+		h_distance=abs(wall_data)
+		return h_distance/np.cos(angle)
 
 	# the callback function for the number stream topic subscription
 	def wall_detector_callback(self, msg):
 		# Right wall points
-		right_wall = msg.ranges[180:480]
+		right_wall = msg.ranges[180:360]
 		angle = msg.angle_min + msg.angle_increment*180
 		xr = []
 		yr = []
@@ -33,8 +43,8 @@ class WallDetector:
 			angle = angle + msg.angle_increment
 
 		# Left wall points
-		left_wall = msg.ranges[600:900]
-		angle = msg.angle_min + msg.angle_increment*600
+		left_wall = msg.ranges[720:900]
+		angle = msg.angle_min + msg.angle_increment*720
 		xl = []
 		yl = []
 		for dist in left_wall:
@@ -44,59 +54,66 @@ class WallDetector:
 			angle = angle + msg.angle_increment
 
 		# Finding wall equation
-		zr = np.polyfit(xr, yr, 1)
-		zl = np.polyfit(xl, yl, 1)
+		zr,residuals_r, rank_r, singular_values_r, rcond_r = np.polyfit(xr, yr, 1, full=True)
+		zl,residuals_l, rank_l, singular_values_l, rcond_l = np.polyfit(xl, yl, 1, full=True)
+		residuals_l = residuals_l/len(xl)
+		residuals_r = residuals_r/len(xr)
 		
+		# Corner detection
+		corner = msg.ranges[60:480]
+		i = 60
+		index = []
+		for dist in corner:
+			if dist < msg.range_max:
+				index.append(i)
+			i += 1
+
+		corner = [msg.ranges[i] for i in index]
+		i = 0
+		corner_bool = False
+		corner_x = 0
+		corner_y = 0
+		while i < len(corner)-5:
+			if (corner[i+1] - corner[i] > 3):
+				corner_x = corner[i]*np.cos(msg.angle_min + msg.angle_increment*index[i])
+				corner_y = corner[i]*np.sin(msg.angle_min + msg.angle_increment*index[i])
+				print((msg.angle_min + msg.angle_increment*index[i])*180/np.pi)
+				corner_bool = True
+				break
+			i += 1
+
 		# Publishing message
 		message = wd()
 		message.a_r = zr[0]
 		message.b_r = zr[1]
 		message.a_l = zl[0]
 		message.b_l = zl[1]
+		message.corner_bool = corner_bool
+		message.corner_x = corner_x
+		message.corner_y = corner_y
 
 		self.wd_pub.publish(message)
 
 		# Plotting results
-'''		angle = msg.angle_min
-		x = []
-		y = []
-		for dist in msg.ranges:
-			if dist < msg.range_max:
-				x.append(dist*np.cos(angle))
-				y.append(dist*np.sin(angle))
-			angle = angle + msg.angle_increment
+		# angle = msg.angle_min
+		# x = []
+		# y = []
+		# for dist in msg.ranges:
+		# 	if dist < msg.range_max:
+		# 		x.append(dist*np.cos(angle))
+		# 		y.append(dist*np.sin(angle))
+		# 	angle = angle + msg.angle_increment
 
-		pr = np.poly1d(zr)
-		xpr = np.linspace(-15, 15, 100)
-		pl = np.poly1d(zl)
-		xpl = np.linspace(-15, 15, 100)
+		# pr = np.poly1d(zr)
+		# xpr = np.linspace(-15, 15, 100)
+		# pl = np.poly1d(zl)
+		# xpl = np.linspace(-15, 15, 100)
 
-		plt.clf()
-		plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', xr, yr, 'ro', xl, yl, 'ro')
-		plt.axis([-15,15,-15,15])
-		plt.draw()
-'''		
-
-		# n_inputs = 1
-		# n_outputs = 1
-		# debug = False
-		# X = np.asarray([x])
-		# Y = np.asarray([y])
-		# X = np.transpose(X)
-		# Y = np.transpose(Y)
-		# all_data = np.hstack( (X,Y) )
-		# input_columns = range(n_inputs) # the first columns of the array
-		# output_columns = [n_inputs+i for i in range(n_outputs)] # the last columns of the array
-		# model = ransac.LinearLeastSquaresModel(input_columns,output_columns,debug=debug)
-		# # run RANSAC algorithm
-		# ransac_fit, ransac_data = ransac.ransac(all_data,model, 30, 100, 7e3, 60, debug=debug,return_all=True)
-		# print(ransac_fit)
-		#wd_subs.unregister()
-
-
-				
-
-
+		# plt.clf()
+		# #plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', xr, yr, 'ro', xl, yl, 'ro')
+		# plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', corner_x, corner_y, 'rx', markersize=10)
+		# plt.axis([-15,15,-15,15])
+		# plt.draw()
 
 if __name__ == "__main__":
 	# initialize the ROS client API, giving the default node name

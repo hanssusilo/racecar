@@ -6,3 +6,6 @@ float32 a_r
 float32 b_r
 float32 a_l
 float32 b_l
+bool corner_bool
+float32 corner_x
+float32 corner_y
