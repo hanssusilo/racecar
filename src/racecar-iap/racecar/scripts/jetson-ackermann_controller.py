@@ -130,39 +130,44 @@ class _AckermannCtrlr(object):
         if self._has_corner:
             print("Corner angle: " + str(math.atan(self._corner_y/self._corner_x)/math.pi*180))
             print("Corner range: " + str(math.sqrt(self._corner_x**2 + self._corner_y**2)))      
-
-        alpha = math.atan(self._left_wall_a)
-        beta = math.atan(self._right_wall_a)
-        a = math.tan((alpha + beta)/2.0)
-        b = (self._right_wall_b - self._left_wall_b)*(self._left_wall_a - a)/(self._left_wall_a - self._right_wall_a) + self._left_wall_b
-        self._xo = 3
-        self._yo = a*3 + b
+            self._xo = self._corner_x + 1.5*math.cos(math.atan(self._right_wall_a))
+            self._yo = self._corner_y + 1.5*math.sin(math.atan(self._right_wall_a))
+        else:
+            alpha = math.atan(self._left_wall_a)
+            beta = math.atan(self._right_wall_a)
+            a = math.tan((alpha + beta)/2.0)
+            b = (self._right_wall_b - self._left_wall_b)*(self._left_wall_a - a)/(self._left_wall_a - self._right_wall_a) + self._left_wall_b
+            self._xo = 3
+            self._yo = a*3 + b
 
         # print("Middle Angular Coefficient: " + str(self._middle_line_a))
         # print("Right Angular Coefficient: " + str(self._right_wall_a))
         # print("Left Angular Coefficient: " + str(self._left_wall_a))
 
-
+        # Ploting Results
         # zr = []
         # zr.append(walls_data.a_r)
         # zr.append(walls_data.b_r)
         # zl = []
         # zl.append(walls_data.a_l)
         # zl.append(walls_data.b_l)
-        # zm = []
-        # zm.append(self._middle_line_a)
-        # zm.append(self._middle_line_b)
+        # # zm = []
+        # # zm.append(self._middle_line_a)
+        # # zm.append(self._middle_line_b)
 
         # pr = np.poly1d(zr)
         # xpr = np.linspace(-15, 15, 100)
         # pl = np.poly1d(zl)
         # xpl = np.linspace(-15, 15, 100)
-        # pm = np.poly1d(zm)
-        # xpm = np.linspace(-15, 15, 100)
+        # # pm = np.poly1d(zm)
+        # # xpm = np.linspace(-15, 15, 100)
 
         # plt.clf()
-        # plt.plot(xpr, pr(xpr), 'r-', xpl, pl(xpl), 'g-', xpm, pm(xpm), 'b-')
+        # plt.plot(xpr, pr(xpr), 'r-', xpl, pl(xpl), 'b-')
         # plt.axis([-15,15,-15,15])
+        # plt.plot(self._xo, self._yo, 'gx')
+        # if self._has_corner:
+        #     plt.plot(self._corner_x, self._corner_y, 'g^')
         # plt.draw()
         
         pass
@@ -191,16 +196,17 @@ class _AckermannCtrlr(object):
             
 
             # Velocity Controller
-            self._ackermann_cmd.drive.speed = self._ctrl_speed() # range = -2:2
-            self._ackermann_cmd.drive.acceleration = 0 # range = 0:0, always 0 from the joystick
-            self._ackermann_cmd.drive.jerk = 0 # range = 0:0, always 0 from the joystick
+            self._ackermann_cmd.drive.speed = self._ctrl_speed()
+            self._ackermann_cmd.drive.acceleration = 0
+            self._ackermann_cmd.drive.jerk = 0
 
             # Steering Controller
-            self._ackermann_cmd.drive.steering_angle = self._ctrl_steering() # range = -0.34:0.34
-            self._ackermann_cmd.drive.steering_angle_velocity = 0 # range = 0:0 , always 0 from the joystick
+            self._ackermann_cmd.drive.steering_angle = self._ctrl_steering()
+            self._ackermann_cmd.drive.steering_angle_velocity = 0
 
             # Publish the velocity
-            self._ackermann_cmd_pub.publish(self._ackermann_cmd)
+            if self.joy_command[4] != 1:
+                self._ackermann_cmd_pub.publish(self._ackermann_cmd)
 
             # wait
             self._sleep_timer.sleep()
@@ -209,109 +215,13 @@ class _AckermannCtrlr(object):
         if self.danger or self.joy_command[4] == 1:
             _ctrl_speed_input = 0
         else:
-            _ctrl_speed_input = 3
+            _ctrl_speed_input = 8
 
         return _ctrl_speed_input
 
     def _ctrl_steering(self):
-        # Just witching the steering every second for testing purposes
-        #-----------------------------------------------------------------------
-        # if (self._ackermann_cmd.header.seq % 10 == 0):
-        #         self.sign = -self.sign
-        # _ctrl_steering_input = 0.34*self.sign
-        
-
-        # Distance to the wall approach
-        #-----------------------------------------------------------------------
-        # we want to minimize the distance between the robot and the middle line
-        # so the error is the linear coefficient of the middle line (_middle_line_b)
-
-        # self._int_error_sum_b = self._int_error_sum_b + self._middle_line_b
-
-        # kP = 0.4 # proportional constant 0.34
-        # kD = 0.1 # derivative constant
-        # kI = 0#0.005
-        # kP = 0.05 too low for vel = 0.4
-        # kP = 0.2 kI = 0.1, overshoot too high
-        # kP = 0.2 kI = 0.01, reduced overshoot, but still too 
-        # kP = 0.2 kI = 0.005, still overshoot
-        # kP = 0.4 kI = 0.005, better
-        # kP = 0.1 kI = 0, overshoot, converges slowly
-        # kP = 0.2 kI = 0, lower overshoot, converges slowly
-        # kP = 0.4 kI = 0, lower overshoot, converges slowly
-
-        # -0.34 turn right
-        # 0.34 turn left
-
-        # if kI * self._int_error_sum_b > 0.2:
-        #     self._int_error_sum_b = 0.2/kI
-        # elif kI * self._int_error_sum_b < -0.2:
-        #     self._int_error_sum_b = -0.2/kI
-
-        # Proportional Control
-        # if self.danger or self.joy_command[4] == 1:
-        #     _ctrl_steering_input = 0
-        # else:
-        #     _ctrl_steering_input = kP*self._middle_line_b
-        
-
-        # Proportional + Derivative
-        # _ctrl_steering_input = kD*(self._prev_middle_line_b - self._middle_line_b)
-
-
-        # Proportional + Integrative
-        # if self.danger or self.joy_command[4] == 1:
-        #     _ctrl_steering_input = 0
-        # else:
-        #     _ctrl_steering_input = kP*self._middle_line_b + kI*self._int_error_sum_b
-        #     if _ctrl_steering_input > 0.34:
-        #         _ctrl_steering_input = 0.34
-        #     elif _ctrl_steering_input < -0.34:
-        #         _ctrl_steering_input = -0.34
-
-        # print("P: " + str(kP*self._middle_line_b) + " I: " + str(kI*self._int_error_sum_b) + " error: " + str(self._middle_line_b) + " steering_angle: " + str(kP*self._middle_line_b + kI*self._int_error_sum_b))
-
-        # return _ctrl_steering_input
-
-        # kP = 0.5
-        # kD = 0.1 
-        # kI = 0
-
-        # _min_dist = 0.7
-        # self._int_error_sum_a = self._int_error_sum_a + self._int_error_sum_a
-
-        # if kI * self._int_error_sum_a > 0.2:
-        #     self._int_error_sum_a = 0.2/kI
-        # elif kI * self._int_error_sum_a < -0.2:
-        #     self._int_error_sum_a = -0.2/kI
-
-        # if self.danger or self.joy_command[4] == 1:
-        #     _ctrl_steering_input = 0
-        # else:
-        #     _ctrl_steering_input = kP*self._middle_line_a + kI*self._int_error_sum_a
-        #     print("left wall: " + str(self._dist_left_wall))
-        #     if abs(self._dist_left_wall) < _min_dist:
-        #         print("avoid wall")
-        #         _ctrl_steering_input = -0.4 * abs(_min_dist - self._dist_left_wall)/_min_dist
-        #     print("right wall: " + str(self._dist_right_wall))
-        #     if abs(self._dist_right_wall) < _min_dist:
-        #         print("avoid wall")
-        #         _ctrl_steering_input = 0.4 * abs(_min_dist - self._dist_right_wall)/_min_dist
-
-        #     if _ctrl_steering_input > 0.34:
-        #         _ctrl_steering_input = 0.34
-        #     elif _ctrl_steering_input < -0.34:  
-        #         _ctrl_steering_input = -0.34
-
-        #     if self._has_corner:
-        #         _ctrl_steering_input = -0.17
-
-        # print("Middle Angular Coefficient: " + str(self._middle_line_a))
-        # print("Distance to the left: " + str(self._dist_left_wall))
-        # print("Distance to the right: " + str(self._dist_right_wall))
-        # print("P: " + str(kP*self._middle_line_a) + " I: " + str(kI*self._int_error_sum_a) + " error: " + str(self._middle_line_a) + " steering_angle: " + str(_ctrl_steering_input))
-        
-        kP = 0.5
+        #kP = 0.5 # for low velocity
+        kP = 0.2 # for high velocity
         kD = 0.1 
         kI = 0
 
@@ -325,10 +235,6 @@ class _AckermannCtrlr(object):
 
         # print(" ")
         return _ctrl_steering_input
-
-
-
-
 
 
  # main

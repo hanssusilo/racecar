@@ -4,6 +4,7 @@ import rospy
 import ransac
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 # import the Laser Scan message type
 from sensor_msgs.msg import LaserScan
@@ -74,7 +75,7 @@ class WallDetector:
 		corner_x = 0
 		corner_y = 0
 		while i < len(corner)-5:
-			if (corner[i+1] - corner[i] > 3):
+			if (corner[i+1] - corner[i] > 1.5):
 				corner_x = corner[i]*np.cos(msg.angle_min + msg.angle_increment*index[i])
 				corner_y = corner[i]*np.sin(msg.angle_min + msg.angle_increment*index[i])
 				print((msg.angle_min + msg.angle_increment*index[i])*180/np.pi)
@@ -93,6 +94,44 @@ class WallDetector:
 		message.corner_y = corner_y
 
 		self.wd_pub.publish(message)
+		
+		# zr = []
+		# zr.append(walls_data.a_r)
+		# zr.append(walls_data.b_r)
+		# zl = []
+		# zl.append(walls_data.a_l)
+		# zl.append(walls_data.b_l)
+		# # zm = []
+		# # zm.append(self._middle_line_a)
+		# # zm.append(self._middle_line_b)
+
+		# pr = np.poly1d(zr)
+		# xpr = np.linspace(-15, 15, 100)
+		# pl = np.poly1d(zl)
+		# xpl = np.linspace(-15, 15, 100)
+		# # pm = np.poly1d(zm)
+		# # xpm = np.linspace(-15, 15, 100)
+
+		# plt.clf()
+		# plt.plot(xpr, pr(xpr), 'r-', xpl, pl(xpl), 'b-')
+		# plt.axis([-15,15,-15,15])
+		# plt.plot(self._xo, self._yo, 'gx')
+		# if self._has_corner:
+		#     plt.plot(self._corner_x, self._corner_y, 'g^')
+		# plt.draw()
+		
+		if corner_bool:
+			print("Corner angle: " + str(math.atan(corner_y/corner_x)/math.pi*180))
+			print("Corner range: " + str(math.sqrt(corner_x**2 + corner_y**2)))      
+			xo = corner_x + math.cos(math.atan(message.a_r))
+			yo = corner_y + math.sin(math.atan(message.a_r))
+		else:
+			alpha = math.atan(message.a_l)
+			beta = math.atan(message.a_r)
+			a = math.tan((alpha + beta)/2.0)
+			b = (message.b_r - message.b_l)*(message.a_l - a)/(message.a_l - message.a_r) + message.b_l
+			xo = 3
+			yo = a*3 + b
 
 		# Plotting results
 		# angle = msg.angle_min
@@ -102,7 +141,7 @@ class WallDetector:
 		# 	if dist < msg.range_max:
 		# 		x.append(dist*np.cos(angle))
 		# 		y.append(dist*np.sin(angle))
-		# 	angle = angle + msg.angle_increment
+		#  	angle = angle + msg.angle_increment
 
 		# pr = np.poly1d(zr)
 		# xpr = np.linspace(-15, 15, 100)
@@ -110,10 +149,15 @@ class WallDetector:
 		# xpl = np.linspace(-15, 15, 100)
 
 		# plt.clf()
-		# #plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', xr, yr, 'ro', xl, yl, 'ro')
-		# plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', corner_x, corner_y, 'rx', markersize=10)
+		# # plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', xr, yr, 'ro', xl, yl, 'ro')
+		# plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-')
+		# if corner_bool:
+		# 	plt.plot(corner_x, corner_y, 'rx', markersize=10)
+		# plt.plot(xo, yo, 'gx', markersize=10)
+		
 		# plt.axis([-15,15,-15,15])
 		# plt.draw()
+		# plt.show()
 
 if __name__ == "__main__":
 	# initialize the ROS client API, giving the default node name
