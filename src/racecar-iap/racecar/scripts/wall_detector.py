@@ -123,15 +123,15 @@ class WallDetector:
 		if corner_bool:
 			# print("Corner angle: " + str(math.atan(corner_y/corner_x)/math.pi*180))
 			# print("Corner range: " + str(math.sqrt(corner_x**2 + corner_y**2)))      
-			xo = corner_x + math.cos(math.atan(message.a_r))
-			yo = corner_y + math.sin(math.atan(message.a_r))
+			xo = corner_x + 1.5*math.cos(math.atan(message.a_r))
+			yo = corner_y + 1.5*math.sin(math.atan(message.a_r))
 		else:
 			alpha = math.atan(message.a_l)
 			beta = math.atan(message.a_r)
 			a = math.tan((alpha + beta)/2.0)
 			b = (message.b_r - message.b_l)*(message.a_l - a)/(message.a_l - message.a_r) + message.b_l
-			xo = 3
-			yo = a*3 + b
+			xo = 5
+			yo = a*5 + b - 1
 
 		# Plotting results
 		angle = msg.angle_min
@@ -151,9 +151,10 @@ class WallDetector:
 		plt.clf()
 		# plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', xr, yr, 'ro', xl, yl, 'ro')
 		plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', xr, yr, 'ro', xl, yl, 'ro')
+		plt.plot(0,0, 'o', markersize=10)
 		if corner_bool:
-			plt.plot(corner_x, corner_y, 'rx', markersize=10)
-		plt.plot(xo, yo, 'gx', markersize=10)
+			plt.plot(corner_x, corner_y, 'rx', markersize=5)
+		plt.plot(xo, yo, 'gx', markersize=5)
 		
 		plt.axis([-15,15,-15,15])
 		plt.draw()

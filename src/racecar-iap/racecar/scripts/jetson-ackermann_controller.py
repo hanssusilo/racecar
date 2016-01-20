@@ -126,7 +126,7 @@ class _AckermannCtrlr(object):
         
         self._middle_line_a = h
         self._prev_middle_line_b = self._middle_line_b
-        self._middle_line_b = k - 0.3 # trying to correct left bias
+        self._middle_line_b = k - 1 # trying to correct left bias
 
         self._dist_left_wall = self._left_wall_b/self._left_wall_a * math.sin(math.atan(self._left_wall_a))
         self._dist_right_wall = -self._right_wall_b/self._right_wall_a * math.sin(math.atan(self._right_wall_a))
@@ -277,15 +277,13 @@ class _AckermannCtrlr(object):
                 elif self.danger == 3:
                     _ctrl_speed_input = 3
 
-    # print("Parallel: " + str(self.parallel))
-    if self.dist_total > 3.5:
-        print("Drive fast!""Drive fast!""Drive fast!""Drive fast!")
-    print("Angular difference: " + str(abs(self._right_wall_a - self._left_wall_a)))
-    print("Distance bet walls: " + str(self.dist_total))
-    print("Speed: " + str(_ctrl_speed_input*3000))
+        # print("Parallel: " + str(self.parallel))
+        if self.dist_total and self._has_corner > 3.5:
+            print("Drive fast!""Drive fast!""Drive fast!""Drive fast!")
+        print("Angular difference: " + str(abs(self._right_wall_a - self._left_wall_a)))
+        print("Distance bet walls: " + str(self.dist_total))
+        print("Speed: " + str(_ctrl_speed_input*3000))
                 # _ctrl_speed_input = 0
-
-
         return _ctrl_speed_input
 
     def _ctrl_steering(self):
