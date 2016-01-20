@@ -65,7 +65,7 @@ class DangerDetector:
 
 		range_1 = 1 # MARK: verify what is ther actual range of values
 		range_2 = 2
-		range_3 = 3
+		range_3 = 3 
 		# range_2 = 1.67
 		# range_3 = 2.33
 		# range_4 = 3
