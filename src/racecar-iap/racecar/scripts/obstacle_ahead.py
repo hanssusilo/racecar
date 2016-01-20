@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 # import the Laser Scan message type
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Bool
+from ackermann_msgs.msg import AckermannDriveStamped
+from std_msgs.msg import Float64
 
 
 class DangerDetector:
@@ -19,13 +20,20 @@ class DangerDetector:
 		rospy.init_node("DangerDedector")
 
 		# Publishers
-		self._danger_pub = rospy.Publisher("danger", Bool, queue_size = 10)
+		self._danger_pub = rospy.Publisher("danger", Float64, queue_size = 10)
 
 		# Subscribers
 		rospy.Subscriber("/scan", LaserScan, self.readingLaser)
+		rospy.Subscriber("/vesc/ackermann_cmd", AckermannDriveStamped, self._steering_data)
+
+		self._steering_angle = 0
 
 		# Ploting
 		plt.ion()
+
+	def _steering_data(self, ackermann_cmd):
+		self._steering_angle = ackermann_cmd.drive.steering_angle
+		pass
 
 	def readingLaser(self, msg):
 		''' readingLaser(self, msg):
@@ -36,17 +44,49 @@ class DangerDetector:
 		- The data goes from -135 to 135 degrees with increments of 0.25
 		- Angle -90: 180, Angle 90: 600, Angle 0: 540
 		'''
+		# looking to the steering angle direction
+		# 0.34 -> 1080
+		# -0.34 -> 0
+		range_middle = int((self._steering_angle + 0.34)/0.68*1080)
+		init = range_middle - 120
+		end = range_middle + 120
+		# init = 420
+		# end = 660
+		init = 480
+		end = 600
 
-		range_min = 1 # MARK: verify what is ther actual range of values
 		obs_free_limit = 50
 
+		# For just looking straight ahead:
 		# Front points # 480, 600 for 30 degrees # 420, 660 for 60 degrees
-		init = 420
-		end = 660
+		# init = 420
+		# end = 660
 		# defining a specific range of angles to be considered
+
+		range_1 = 1 # MARK: verify what is ther actual range of values
+		range_2 = 2
+		range_3 = 3
+		# range_2 = 1.67
+		# range_3 = 2.33
+		# range_4 = 3
+
 		front_obs_ranges = msg.ranges[init:end]
-		weights = [0 if dist > range_min else 1 for dist in front_obs_ranges]
-		danger_ahead = sum(weights) > obs_free_limit
+		weights_1 = [0 if dist > range_1 else 1 for dist in front_obs_ranges]
+		weights_2 = [0 if dist > range_2 or dist < range_1 else 1 for dist in front_obs_ranges]
+		weights_3 = [0 if dist > range_3 or dist < range_2 else 1 for dist in front_obs_ranges]
+		sum_weights = [sum(weights_1), sum(weights_2), sum(weights_3)]
+		max_indice = sum_weights.index(max(sum_weights))
+		has_obstacle = sum_weights[max_indice] > obs_free_limit
+		if has_obstacle:
+			danger_ahead = max_indice + 1
+		else:
+			danger_ahead = 0
+
+		print("Zone: " + str(max_indice))
+		# weights_1 = [0 if dist > range_min else 1 for dist in front_obs_ranges]
+		# weights_2 = [0 if dist > range_min else 1 for dist in front_obs_ranges]
+		# weights_3 = [0 if dist > range_min else 1 for dist in front_obs_ranges]
+		# weights_4 = [0 if dist > range_min else 1 for dist in front_obs_ranges]
 
 		self._danger_pub.publish(danger_ahead)
 		'''
