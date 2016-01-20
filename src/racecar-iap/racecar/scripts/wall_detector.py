@@ -134,31 +134,31 @@ class WallDetector:
 			yo = a*5 + b - 1
 
 		# Plotting results
-		angle = msg.angle_min
-		x = []
-		y = []
-		for dist in msg.ranges:
-			if dist < msg.range_max:
-				x.append(dist*np.cos(angle))
-				y.append(dist*np.sin(angle))
-		 	angle = angle + msg.angle_increment
+		# angle = msg.angle_min
+		# x = []
+		# y = []
+		# for dist in msg.ranges:
+		# 	if dist < msg.range_max:
+		# 		x.append(dist*np.cos(angle))
+		# 		y.append(dist*np.sin(angle))
+		#  	angle = angle + msg.angle_increment
 
-		pr = np.poly1d(zr)
-		xpr = np.linspace(-15, 15, 100)
-		pl = np.poly1d(zl)
-		xpl = np.linspace(-15, 15, 100)
+		# pr = np.poly1d(zr)
+		# xpr = np.linspace(-15, 15, 100)
+		# pl = np.poly1d(zl)
+		# xpl = np.linspace(-15, 15, 100)
 
-		plt.clf()
+		# plt.clf()
+		# # plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', xr, yr, 'ro', xl, yl, 'ro')
 		# plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', xr, yr, 'ro', xl, yl, 'ro')
-		plt.plot(x,y,'.', xpr, pr(xpr), '-', xpl, pl(xpl), '-', xr, yr, 'ro', xl, yl, 'ro')
-		plt.plot(0,0, 'o', markersize=10)
-		if corner_bool:
-			plt.plot(corner_x, corner_y, 'rx', markersize=5)
-		plt.plot(xo, yo, 'gx', markersize=5)
+		# plt.plot(0,0, 'o', markersize=10)
+		# if corner_bool:
+		# 	plt.plot(corner_x, corner_y, 'rx', markersize=5)
+		# plt.plot(xo, yo, 'gx', markersize=5)
 		
-		plt.axis([-15,15,-15,15])
-		plt.draw()
-		plt.show()
+		# plt.axis([-15,15,-15,15])
+		# plt.draw()
+		# plt.show()
 
 if __name__ == "__main__":
 	# initialize the ROS client API, giving the default node name
