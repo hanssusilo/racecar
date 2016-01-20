@@ -33,8 +33,8 @@ class WallDetector:
 	# the callback function for the number stream topic subscription
 	def wall_detector_callback(self, msg):
 		# Right wall points
-		right_wall = msg.ranges[180:360]
-		angle = msg.angle_min + msg.angle_increment*180
+		right_wall = msg.ranges[240:480]
+		angle = msg.angle_min + msg.angle_increment*240
 		xr = []
 		yr = []
 		for dist in right_wall:
@@ -44,8 +44,8 @@ class WallDetector:
 			angle = angle + msg.angle_increment
 
 		# Left wall points
-		left_wall = msg.ranges[720:900]
-		angle = msg.angle_min + msg.angle_increment*720
+		left_wall = msg.ranges[600:840]
+		angle = msg.angle_min + msg.angle_increment*600
 		xl = []
 		yl = []
 		for dist in left_wall:
