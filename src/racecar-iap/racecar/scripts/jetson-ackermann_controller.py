@@ -102,6 +102,8 @@ class _AckermannCtrlr(object):
         self.ki_button_pressed = False
         self.ki_button_pressed_time = rospy.get_time()
         self._ki = 1
+        self._start_time = 0
+        self._prev_state_joy = 1
 
     # def laser_callback(self, laser_data):
     #     # update laser data
@@ -146,7 +148,7 @@ class _AckermannCtrlr(object):
             a = math.tan((alpha + beta)/2.0)
             b = (self._right_wall_b - self._left_wall_b)*(self._left_wall_a - a)/(self._left_wall_a - self._right_wall_a) + self._left_wall_b
             self._xo = 5
-            self._yo = a*5 + b - 1 # trying to correct left bias
+            self._yo = a*5 + b - 0.75# trying to correct left bias
 
         # Distance between the walls, considering the robot position
         dist_right = abs(self._right_wall_b)/math.sqrt(self._right_wall_a**2 + 1)
@@ -242,6 +244,12 @@ class _AckermannCtrlr(object):
                     self.ki_button_pressed = True
                     self.ki_button_pressed_time = t
 
+            if self.joy_command[4] == 0:
+                if self._prev_state_joy == 1:
+                    self._start_time = rospy.get_time()
+                    self._prev_state_joy = 0          
+            else:
+                self._prev_state_joy = 1
 
             # wait
             self._sleep_timer.sleep()
@@ -253,13 +261,13 @@ class _AckermannCtrlr(object):
             # if there is a corner, go slower
             if self._has_corner:
                 if self.danger == 0:
-                    _ctrl_speed_input = 4
+                    _ctrl_speed_input = 4 if abs(self._start_time - rospy.get_time()) > 20 else 6
                 elif self.danger == 1:
                     _ctrl_speed_input = 0.5
                 elif self.danger == 2:
                     _ctrl_speed_input = 1
                 elif self.danger == 3:
-                    _ctrl_speed_input = 3
+                    _ctrl_speed_input = 4 #3 (completed track)
 
                 # print("Speed: " + str(_ctrl_speed_input*3000))
                 # _ctrl_speed_input = 0
@@ -269,13 +277,13 @@ class _AckermannCtrlr(object):
             else:
                 #_ctrl_speed_input = 6 if self.danger == 0 else 3000*self.danger
                 if self.danger == 0:
-                    _ctrl_speed_input = 6 if self.dist_total > 3.5 else 4
+                    _ctrl_speed_input = 6 #if self.dist_total > 3.5 else 4
                 elif self.danger == 1:
                     _ctrl_speed_input = 0.5
                 elif self.danger == 2:
                     _ctrl_speed_input = 1
                 elif self.danger == 3:
-                    _ctrl_speed_input = 3
+                    _ctrl_speed_input = 4 #3 (completed track)
 
         # print("Parallel: " + str(self.parallel))
         # if self.dist_total and self._has_corner > 3.5:
