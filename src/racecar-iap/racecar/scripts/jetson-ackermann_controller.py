@@ -223,10 +223,10 @@ class _AckermannCtrlr(object):
                 self._ackermann_cmd_pub.publish(self._ackermann_cmd)
 
             # Publish ki
-            if self.ki_button_pressed and (t-self.ki_button_pressed_time > .15)
+            if self.ki_button_pressed and (t-self.ki_button_pressed_time > .15):
                 self.ki_button_pressed = False
 
-            if not self.ki_button_pressed
+            if not self.ki_button_pressed:
                 if (self.joy_command[3] == 1):
                     self._ki = self._ki*2
                     ki_msg = Float64()
@@ -269,7 +269,7 @@ class _AckermannCtrlr(object):
             else:
                 #_ctrl_speed_input = 6 if self.danger == 0 else 3000*self.danger
                 if self.danger == 0:
-                    _ctrl_speed_input = 4#6 if self.dist_total > 3 and self.parallel else 4
+                    _ctrl_speed_input = 6 if self.dist_total > 3.5 else 4
                 elif self.danger == 1:
                     _ctrl_speed_input = 0.5
                 elif self.danger == 2:
@@ -277,9 +277,12 @@ class _AckermannCtrlr(object):
                 elif self.danger == 3:
                     _ctrl_speed_input = 3
 
-                print("Parallel: " + str(self.parallel))
-                print("Distance bet walls: " + str(self.dist_total))
-                print("Speed: " + str(_ctrl_speed_input*3000))
+    # print("Parallel: " + str(self.parallel))
+    if self.dist_total > 3.5:
+        print("Drive fast!""Drive fast!""Drive fast!""Drive fast!")
+    print("Angular difference: " + str(abs(self._right_wall_a - self._left_wall_a)))
+    print("Distance bet walls: " + str(self.dist_total))
+    print("Speed: " + str(_ctrl_speed_input*3000))
                 # _ctrl_speed_input = 0
 
 

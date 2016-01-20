@@ -82,7 +82,7 @@ class DangerDetector:
 		else:
 			danger_ahead = 0
 
-		print("Zone: " + str(max_indice))
+		#print("Zone: " + str(max_indice))
 		# weights_1 = [0 if dist > range_min else 1 for dist in front_obs_ranges]
 		# weights_2 = [0 if dist > range_min else 1 for dist in front_obs_ranges]
 		# weights_3 = [0 if dist > range_min else 1 for dist in front_obs_ranges]

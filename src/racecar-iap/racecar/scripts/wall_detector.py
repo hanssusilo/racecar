@@ -78,7 +78,7 @@ class WallDetector:
 			if (corner[i+1] - corner[i] > 1.5):
 				corner_x = corner[i]*np.cos(msg.angle_min + msg.angle_increment*index[i])
 				corner_y = corner[i]*np.sin(msg.angle_min + msg.angle_increment*index[i])
-				print((msg.angle_min + msg.angle_increment*index[i])*180/np.pi)
+				# print((msg.angle_min + msg.angle_increment*index[i])*180/np.pi)
 				corner_bool = True
 				break
 			i += 1
@@ -121,8 +121,8 @@ class WallDetector:
 		# plt.draw()
 		
 		if corner_bool:
-			print("Corner angle: " + str(math.atan(corner_y/corner_x)/math.pi*180))
-			print("Corner range: " + str(math.sqrt(corner_x**2 + corner_y**2)))      
+			# print("Corner angle: " + str(math.atan(corner_y/corner_x)/math.pi*180))
+			# print("Corner range: " + str(math.sqrt(corner_x**2 + corner_y**2)))      
 			xo = corner_x + math.cos(math.atan(message.a_r))
 			yo = corner_y + math.sin(math.atan(message.a_r))
 		else:
