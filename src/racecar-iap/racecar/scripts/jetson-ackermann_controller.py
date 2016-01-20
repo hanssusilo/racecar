@@ -73,6 +73,7 @@ class _AckermannCtrlr(object):
 
         # Publishers
         self._ackermann_cmd_pub = rospy.Publisher("/vesc/ackermann_cmd", AckermannDriveStamped, queue_size=10)
+	self._ki_val_pub = rospy.Publisher("/vesc/ki_val", Float64, queue_size=10)
 
         # Subscribers
         # laser data
@@ -96,6 +97,10 @@ class _AckermannCtrlr(object):
         self._corner_y = 0
         self._xo = 1
         self._yo = 0
+
+        self.ki_button_pressed = False
+        self.ki_button_pressed_time = rospy.get_time()
+	self._ki = 1
 
     # def laser_callback(self, laser_data):
     #     # update laser data
@@ -208,6 +213,27 @@ class _AckermannCtrlr(object):
             if self.joy_command[4] != 1:
                 self._ackermann_cmd_pub.publish(self._ackermann_cmd)
 
+
+            # Publish ki
+            if self.ki_button_pressed and (t-self.ki_button_pressed_time > .15)
+                self.ki_button_pressed = False
+
+            if not self.ki_button_pressed
+                if (self.joy_command[3] == 1):
+                    self._ki = self._ki*2
+                    ki_msg = Float64()
+                    ki_msg.data = self._ki
+                    self._ki_val_pub.publish(ki_msg)
+                    self.ki_button_pressed = True
+                    self.ki_button_pressed_time = t
+                elif (self.joy_command[1] == 1):
+                    self._ki = self._ki/2
+                    ki_msg = Float64()
+                    ki_msg.data = self._ki
+                    self._ki_val_pub.publish(ki_msg)
+                    self.ki_button_pressed = True
+                    self.ki_button_pressed_time = t
+
             # wait
             self._sleep_timer.sleep()
 
@@ -223,7 +249,7 @@ class _AckermannCtrlr(object):
         #kP = 0.5 # for low velocity
         kP = 0.2 # for high velocity
         kD = 0.1 
-        kI = 0
+        kI = self._ki
 
         _ctrl_steering_input = kP*math.atan2(self._yo, self._xo)
 
